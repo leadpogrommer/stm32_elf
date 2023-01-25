@@ -7,7 +7,7 @@ include(cmake/stm32f765.cmake)
 add_executable(blink src/usb_cdc.c src/main.c)
 target_link_libraries(blink stm32f103)
 set_property(TARGET blink PROPERTY C_STANDARD 11)
-target_include_directories(blink src/include)
+target_include_directories(blink PRIVATE src/include)
 stm32_add_linker_script(blink PRIVATE src/ld/basic.stm32.ld)
 stm32_add_flash_targets(blink)
 #
