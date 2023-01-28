@@ -3,7 +3,7 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/cm3/nvic.h>
 #include <stddef.h>
-#include "usb_cdc.h"
+#include "usb_request.h"
 #include <FreeRTOS.h>
 #include <task.h>
 
@@ -187,6 +187,7 @@ static void send_interrupt_callback(usbd_device *dev, uint8_t ep) {
 static void data_write_cb(usbd_device *dev, uint8_t ep){
     if(request_state.done_writing)return;
     if(request_state.send_buffer == 0){
+        usbd_ep_write_packet(usbd_dev, EP_DATA_IN, 0, 0);
         request_state.done_writing = 1;
         check_and_notify();
         return;
@@ -205,7 +206,7 @@ static void data_write_cb(usbd_device *dev, uint8_t ep){
 }
 
 
-void usb_make_request(uint8_t* command, size_t command_size, request_buffer_t* send_buffer, request_buffer_t* receive_buffers, int request_buffer_count){
+void usb_make_request(void *command, size_t command_size, request_buffer_t* send_buffer, request_buffer_t* receive_buffers, int request_buffer_count){
     // setup request data
     request_state.done_reading = 0;
     request_state.done_writing = 0;
@@ -217,7 +218,7 @@ void usb_make_request(uint8_t* command, size_t command_size, request_buffer_t* s
     for(int i = 0; i < request_buffer_count; i++){
         receive_buffers[i].pos = 0;
     }
-    send_buffer->pos = 0;
+    if(send_buffer)send_buffer->pos = 0;
 
 
     // initiate request

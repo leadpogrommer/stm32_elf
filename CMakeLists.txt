@@ -5,12 +5,13 @@ project(blink VERSION 0.1.0 LANGUAGES CXX C ASM)
 include(cmake/stm32f765.cmake)
 
 add_executable(blink
-        src/usb_cdc.c src/main.c
+        src/usb_request.c src/main.c
         src/opencm3_freertos.c
         thirdparty/freertos/portable/GCC/ARM_CM3/port.c
         thirdparty/freertos/list.c
         thirdparty/freertos/tasks.c
         src/fs.c
+        src/usb_fs.c
         )
 target_link_libraries(blink stm32f103)
 set_property(TARGET blink PROPERTY C_STANDARD 11)
