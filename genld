@@ -1,0 +1,16 @@
+#!/bin/zsh
+set -e
+
+cd "$(dirname "$0")"
+
+DEVICE=stm32f103c8t6
+
+DATA_FILE=thirdparty/libopencm3/ld/devices.data
+TEMPLATE_FILE=thirdparty/libopencm3/ld/linker.ld.S
+GENLINK=thirdparty/libopencm3/scripts/genlink.py
+
+
+DEFS=$($GENLINK $DATA_FILE $DEVICE DEFS)
+
+
+arm-none-eabi-gcc -E -P -x c $(echo $DEFS) $TEMPLATE_FILE > src/ld/stm32f103c8.ld

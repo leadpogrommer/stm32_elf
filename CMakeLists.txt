@@ -18,7 +18,7 @@ set_property(TARGET blink PROPERTY C_STANDARD 11)
 target_include_directories(blink PRIVATE src/include thirdparty/freertos/include thirdparty/freertos/portable/GCC/ARM_CM3)
 target_compile_options(blink PRIVATE "-specs=nano.specs")
 target_link_options(blink PRIVATE "-specs=nano.specs")
-stm32_add_linker_script(blink PRIVATE src/ld/basic.stm32.ld)
+stm32_add_linker_script(blink PRIVATE src/ld/stm32f103c8.ld)
 stm32_add_flash_targets(blink)
 #
 #add_executable(timer src/timer.cpp)
