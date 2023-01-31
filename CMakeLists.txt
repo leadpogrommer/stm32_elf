@@ -12,7 +12,7 @@ add_executable(blink
         thirdparty/freertos/tasks.c
         src/fs.c
         src/usb_fs.c
-        )
+        src/fs_test.c src/fs_test.h)
 target_link_libraries(blink stm32f103)
 set_property(TARGET blink PROPERTY C_STANDARD 11)
 target_include_directories(blink PRIVATE src/include thirdparty/freertos/include thirdparty/freertos/portable/GCC/ARM_CM3)

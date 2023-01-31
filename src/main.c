@@ -8,6 +8,8 @@
 #include <ctype.h>
 #include "task.h"
 #include "fs.h"
+#include "fs_test.h"
+#include <elf.h>
 //#include <newlib.h>
 #define LED_PORT GPIOC
 #define RCC_LED_PORT RCC_GPIOC
@@ -15,64 +17,54 @@
 
 usbd_device *dev_decr;
 
-//char recv_buff1[1024];
-//char recv_buff0[4];
-//char *to_send = "Hello world. lorem ipsum dolor sit amet ... http://radiodetali-nsk.ru/wp-content/uploads/2023/01/price-1.xlsx";
-//char *cmd = "GIVE_ME_DATA";
 
-char buff[200];
 
 #define BL_1 10
 #define BL_2 150
 
-void printing_task(){
-//    request_buffer_t send_buffer_sec={to_send, strlen(to_send)};
-//    request_buffer_t recive_buffers_desc[2]={{recv_buff0, 4}, {recv_buff1, 1024}};
-//
-//    usb_make_request(cmd, strlen(cmd), &send_buffer_sec, recive_buffers_desc, 2);
-
-//    printf("Hello, world!\n");
-//    vTaskDelay(300000);
-
-    printf("Ppress enter:");
-    getchar();
-    printf("Starting test...\n");
-    FILE *data_file = fopen("/h/data.txt", "r");
-    uint32_t read_len = 0;
-    FILE *res_file = fopen("/h/r1.txt", "w");
-    while ((read_len = fread(buff, 1, 10, data_file))){
-        for(uint32_t i = 0; i < read_len; i++){
-            buff[i] = toupper(buff[i]);
-        }
-        fwrite(buff, 1, read_len, res_file);
-    }
-    fclose(res_file);
-    res_file = fopen("/h/r2.txt", "w");
-    fseek(data_file, 0, SEEK_SET);
-    while ((read_len = fread(buff, 1, 150, data_file))){
-        for(uint32_t i = 0; i < read_len; i++){
-            buff[i] = tolower(buff[i]);
-        }
-        fwrite(buff, 1, read_len, res_file);
-    }
-
-    fclose(res_file);
-    printf("Done\n");
-    printf("Free heap: %d\n", xPortGetFreeHeapSize());
-
-    vTaskDelete(NULL);
-}
 
 void blink_task(){
     for(;;){
         gpio_toggle(LED_PORT, LED_PIN);
-//        printf("LED is %s\n", gpio_get(LED_PORT, LED_PIN) ? "ON" : "OFF");
         vTaskDelay(pdMS_TO_TICKS(333));
     }
 }
 
-xTaskHandle test_task_handle;
+
+
+char sym_name[100];
+void load_elf_task(){
+    size_t symtab_addr = *((size_t *)(0x08000000 + 0x10000 - 8));
+    size_t strtab_addr = *((size_t *)(0x08000000 + 0x10000 - 4));
+
+    Elf32_Sym *symtab = (Elf32_Sym *)symtab_addr;
+    char *strtab = (char *)strtab_addr;
+    uint32_t n_syms = (strtab_addr - symtab_addr) / sizeof(Elf32_Sym);
+
+    printf("symtab addr: %x, strtab addr: %x, n_syms: %lu\n", symtab_addr, strtab_addr, n_syms);
+
+    while (1){
+        printf("Enter symbol name: ");
+        gets(sym_name);
+        Elf32_Sym *sym = 0;
+        for(int i = 0; i < n_syms; i++){
+            if(strcmp(sym_name, strtab + symtab[i].st_name) == 0){
+                sym = symtab + i;
+                break;
+            }
+        }
+        if(sym == 0){
+            printf("Symbol %s not found\n", sym_name);
+            continue;
+        }
+        printf("Symbol %s addr %08lX\n", sym_name, sym->st_value);
+    }
+
+    vTaskDelete(NULL);
+}
+
 xTaskHandle blink_task_handle;
+xTaskHandle load_elf_task_handle;
 
 int main() {
     rcc_clock_setup_pll(&rcc_hse_configs[RCC_CLOCK_HSE8_72MHZ]);
@@ -87,13 +79,11 @@ int main() {
 
     }
 
-
-
-
     gpio_clear(LED_PORT, LED_PIN);
 
-    xTaskCreate(printing_task, "Test task", 2048, NULL, 2, &test_task_handle);
+//    start_fs_test();
     xTaskCreate(blink_task, "Blink task", 256, NULL, 2, &blink_task_handle);
+    xTaskCreate(load_elf_task, "ELF", 256, NULL, 2, &load_elf_task_handle);
 
     // no hostfs IO until scheduler has been started
     vTaskStartScheduler();
