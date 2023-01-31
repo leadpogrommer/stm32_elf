@@ -12,12 +12,13 @@ add_executable(blink
         thirdparty/freertos/tasks.c
         src/fs.c
         src/usb_fs.c
-        src/fs_test.c src/fs_test.h)
+        src/fs_test.c src/include/fs_test.h src/exec.c)
 target_link_libraries(blink stm32f103)
 set_property(TARGET blink PROPERTY C_STANDARD 11)
 target_include_directories(blink PRIVATE src/include thirdparty/freertos/include thirdparty/freertos/portable/GCC/ARM_CM3)
-target_compile_options(blink PRIVATE "-specs=nano.specs")
-target_link_options(blink PRIVATE "-specs=nano.specs")
+# We want to keep puts
+target_compile_options(blink PRIVATE "-specs=nano.specs" -u puts)
+target_link_options(blink PRIVATE "-specs=nano.specs" -u puts)
 stm32_add_linker_script(blink PRIVATE src/ld/stm32f103c8.ld)
 stm32_add_flash_targets(blink)
 #

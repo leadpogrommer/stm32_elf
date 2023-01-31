@@ -1,0 +1,5 @@
+-Wl,-verbose -- посмотреть линкер скрипт
+
+arm-none-eabi-gcc hello.c -o hello.elf -fPIE  -nostdlib -fno-common -fno-stack-protector -fno-exceptions -fno-asynchronous-unwind-tables -fomit-frame-pointer -fno-unwind-tables -Wl,-z,max-page-size=0x04 -Wl,-Ttext-segment=0x00 -L. -lblink -shared -Os
+
+libblink.so is a copy of blink.elf with e_type changed to ET_DYN

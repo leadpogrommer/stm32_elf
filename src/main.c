@@ -9,6 +9,7 @@
 #include "task.h"
 #include "fs.h"
 #include "fs_test.h"
+#include "exec.h"
 #include <elf.h>
 //#include <newlib.h>
 #define LED_PORT GPIOC
@@ -44,20 +45,26 @@ void load_elf_task(){
     printf("symtab addr: %x, strtab addr: %x, n_syms: %lu\n", symtab_addr, strtab_addr, n_syms);
 
     while (1){
-        printf("Enter symbol name: ");
-        gets(sym_name);
-        Elf32_Sym *sym = 0;
-        for(int i = 0; i < n_syms; i++){
-            if(strcmp(sym_name, strtab + symtab[i].st_name) == 0){
-                sym = symtab + i;
-                break;
-            }
-        }
-        if(sym == 0){
-            printf("Symbol %s not found\n", sym_name);
+        printf("(s - find symbol, l - load elf): ");
+        char cmd;
+        scanf("%c", &cmd);
+        while (getchar() != '\n');
+        if(cmd == 'l'){
+            gets(sym_name);
+            exec_file(sym_name);
+            continue;
+        } else if(cmd != 's'){
             continue;
         }
-        printf("Symbol %s addr %08lX\n", sym_name, sym->st_value);
+
+        printf("Enter symbol name: ");
+        gets(sym_name);
+        size_t sym = find_symbol(sym_name);
+        if(sym == 0){
+            printf("Unable to find symbol %s\n", sym_name);
+            continue;
+        }
+        printf("Symbol %s addr %08lX\n", sym_name, sym);
     }
 
     vTaskDelete(NULL);
@@ -83,7 +90,7 @@ int main() {
 
 //    start_fs_test();
     xTaskCreate(blink_task, "Blink task", 256, NULL, 2, &blink_task_handle);
-    xTaskCreate(load_elf_task, "ELF", 256, NULL, 2, &load_elf_task_handle);
+    xTaskCreate(load_elf_task, "ELF", 512, NULL, 2, &load_elf_task_handle);
 
     // no hostfs IO until scheduler has been started
     vTaskStartScheduler();
