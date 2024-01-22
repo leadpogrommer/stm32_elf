@@ -5,9 +5,9 @@ import sys
 import os
 import struct
 
-control_ep = 0x83
-data_out_ep = 0x04
-data_in_ep = 0x84
+control_ep = 0x81
+data_out_ep = 0x02
+data_in_ep = 0x82
 
 FCNTL = {
     0: os.O_RDONLY,

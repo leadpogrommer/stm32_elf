@@ -35,8 +35,8 @@ void blink_task(){
 
 char sym_name[100];
 void load_elf_task(){
-    size_t symtab_addr = *((size_t *)(0x08000000 + 0x10000 - 8));
-    size_t strtab_addr = *((size_t *)(0x08000000 + 0x10000 - 4));
+    size_t symtab_addr = *((size_t *)(0x08000000 + 0x80000 - 8));
+    size_t strtab_addr = *((size_t *)(0x08000000 + 0x80000 - 4));
 
     Elf32_Sym *symtab = (Elf32_Sym *)symtab_addr;
     char *strtab = (char *)strtab_addr;
@@ -74,10 +74,12 @@ xTaskHandle blink_task_handle;
 xTaskHandle load_elf_task_handle;
 
 int main() {
-    rcc_clock_setup_pll(&rcc_hse_configs[RCC_CLOCK_HSE8_72MHZ]);
+    rcc_clock_setup_pll(&rcc_hse_25mhz_3v3[RCC_CLOCK_3V3_96MHZ]);
 
     rcc_periph_clock_enable(RCC_LED_PORT);
-    gpio_set_mode(LED_PORT, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, LED_PIN);
+    gpio_mode_setup(LED_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, LED_PIN);
+
+
 
     dev_decr = usb_setup();
     init_fs();

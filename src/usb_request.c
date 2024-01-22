@@ -6,6 +6,7 @@
 #include "usb_request.h"
 #include <FreeRTOS.h>
 #include <task.h>
+#include <libopencm3/usb/dwc/otg_fs.h>
 
 static const struct usb_device_descriptor dev_decr = {
         .bLength = USB_DT_DEVICE_SIZE,
@@ -24,9 +25,9 @@ static const struct usb_device_descriptor dev_decr = {
         .bNumConfigurations = 1,
 };
 
-#define EP_CONTROL USB_ENDPOINT_ADDR_IN(3)
-#define EP_DATA_IN USB_ENDPOINT_ADDR_IN(4)
-#define EP_DATA_OUT USB_ENDPOINT_ADDR_OUT(4)
+#define EP_CONTROL USB_ENDPOINT_ADDR_IN(1)
+#define EP_DATA_IN USB_ENDPOINT_ADDR_IN(2)
+#define EP_DATA_OUT USB_ENDPOINT_ADDR_OUT(2)
 
 static const struct usb_endpoint_descriptor endpoints[] = {
         {
@@ -112,7 +113,7 @@ static void data_read_cb(usbd_device *dev, uint8_t ep);
 static void send_interrupt_callback(usbd_device *usbd_dev, uint8_t ep);
 static void usb_set_config_cb(usbd_device *usbd_dev, uint16_t value) {
     usbd_register_control_callback(usbd_dev, USB_REQ_TYPE_VENDOR, USB_REQ_TYPE_TYPE, dummy_control_callback);
-    usbd_ep_setup(usbd_dev, USB_ENDPOINT_ADDR_IN(3), USB_ENDPOINT_ATTR_INTERRUPT, 64, send_interrupt_callback);
+    usbd_ep_setup(usbd_dev, EP_CONTROL, USB_ENDPOINT_ATTR_INTERRUPT, 64, send_interrupt_callback);
     usbd_ep_setup(usbd_dev, EP_DATA_OUT, USB_ENDPOINT_ATTR_BULK, 64, data_read_cb);
     usbd_ep_setup(usbd_dev, EP_DATA_IN, USB_ENDPOINT_ATTR_BULK, 64, data_write_cb);
 //    inited = 1;
@@ -124,15 +125,10 @@ int is_initialized() {
 
 static usbd_device *usbd_dev;
 
-void usb_wakeup_isr(void) {
-    usbd_poll(usbd_dev);
-}
 
-void usb_lp_can_rx0_isr(void) {
-    usbd_poll(usbd_dev);
-}
 
-void usb_hp_can_tx_isr(void){
+// ISR
+void otg_fs_isr(void){
     usbd_poll(usbd_dev);
 }
 
@@ -231,16 +227,30 @@ void usb_make_request(void *command, size_t command_size, request_buffer_t* send
 
 usbd_device *usb_setup(void) {
     rcc_periph_clock_enable(RCC_GPIOA);
-    rcc_periph_clock_enable(RCC_USB);
+    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO11|GPIO12);
+    gpio_set_af(GPIOA, GPIO_AF10, GPIO11|GPIO12); // USB AF
 
-    usbd_dev = usbd_init(&st_usbfs_v1_usb_driver, &dev_decr, &config, usb_strings, 4, control_buffer,
+
+    rcc_periph_clock_enable(RCC_OTGFS);
+    nvic_enable_irq(NVIC_OTG_FS_IRQ);
+
+    usbd_dev = usbd_init(&otgfs_usb_driver, &dev_decr, &config, usb_strings, 4, control_buffer,
                          sizeof(control_buffer));
+    OTG_FS_GCCFG |= OTG_GCCFG_NOVBUSSENS | OTG_GCCFG_PWRDWN;
+    OTG_FS_GCCFG &= ~(OTG_GCCFG_VBUSBSEN | OTG_GCCFG_VBUSASEN);
 
-    nvic_enable_irq(NVIC_USB_LP_CAN_RX0_IRQ);
-    nvic_enable_irq(NVIC_USB_HP_CAN_TX_IRQ);
-    nvic_enable_irq(NVIC_USB_WAKEUP_IRQ);
+//    nvic_enable_irq(NVIC_USB_LP_CAN_RX0_IRQ);
+//    nvic_enable_irq(NVIC_USB_HP_CAN_TX_IRQ);
+//    nvic_enable_irq(NVIC_USB_WAKEUP_IRQ);
+//    nvic_enable_irq(NVIC_)
+
+
 
     usbd_register_set_config_callback(usbd_dev, usb_set_config_cb);
 
+//    while (1){
+//        usbd_poll(usbd_dev);
+//    }
     return usbd_dev;
+
 }

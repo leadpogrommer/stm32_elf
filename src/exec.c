@@ -186,8 +186,8 @@ void exec_file(char *name){
 }
 
 size_t find_symbol(char *name){
-    size_t symtab_addr = *((size_t *)(0x08000000 + 0x10000 - 8));
-    size_t strtab_addr = *((size_t *)(0x08000000 + 0x10000 - 4));
+    size_t symtab_addr = *((size_t *)(0x08000000 + 0x80000 - 8));
+    size_t strtab_addr = *((size_t *)(0x08000000 + 0x80000 - 4));
 
     Elf32_Sym *symtab = (Elf32_Sym *)symtab_addr;
     char *strtab = (char *)strtab_addr;

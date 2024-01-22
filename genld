@@ -3,7 +3,7 @@ set -e
 
 cd "$(dirname "$0")"
 
-DEVICE=stm32f103c8t6
+DEVICE=stm32f411ceu6
 
 DATA_FILE=thirdparty/libopencm3/ld/devices.data
 TEMPLATE_FILE=thirdparty/libopencm3/ld/linker.ld.S

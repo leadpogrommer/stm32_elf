@@ -8,7 +8,7 @@ from elftools.elf.sections import Section, SymbolTableSection, StringTableSectio
         
 
 rom_origin = 0x08000000
-rom_size = 64 * (2**10)
+rom_size = 512 * (2**10)
 
 def main():
     input_file = sys.argv[1]
